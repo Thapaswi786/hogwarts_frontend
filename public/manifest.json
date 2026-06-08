@@ -1,0 +1,15 @@
+{
+  "short_name": "HMS",
+  "name": "Hogwarts University Management System",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#0A2342",
+  "background_color": "#F5F7FA"
+}

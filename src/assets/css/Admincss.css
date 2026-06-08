@@ -1,0 +1,277 @@
+.admin-dashboard {
+  display: flex;
+  min-height: 100vh;
+  background: #000307;
+  color: #eff3f8;
+  font-family: "Segoe UI", sans-serif;
+}
+
+.dashboard-sidebar {
+  width: 260px;
+  background: linear-gradient(180deg, #111827, #1f2937);
+  color: #fff;
+  padding: 24px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  transition: transform 0.3s ease;
+  box-shadow: 4px 0 20px rgba(15, 23, 42, 0.08);
+}
+
+.sidebar-header h2 {
+  margin: 0;
+  font-size: 1.45rem;
+  font-weight: 700;
+}
+
+.sidebar-header p {
+  margin-top: 6px;
+  color: #cbd5e1;
+  font-size: 0.92rem;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sidebar-nav button {
+  border: none;
+  background: transparent;
+  color: #e5e7eb;
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 0.96rem;
+  transition: 0.25s ease;
+}
+
+.sidebar-nav button:hover,
+.sidebar-nav button.active {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.dashboard-main {
+  flex: 1;
+  padding: 24px;
+}
+
+.dashboard-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.dashboard-topbar h1 {
+  margin: 0;
+  font-size: 1.9rem;
+  font-weight: 700;
+}
+
+.dashboard-topbar p {
+  margin-top: 6px;
+  color: #dce0e7;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbar-right input {
+  padding: 10px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  outline: none;
+  min-width: 220px;
+  background: #000000;
+  color:white;
+}
+
+.logout-btn {
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.25s ease;
+  font-weight: 600;
+}
+
+.logout-btn:hover {
+  background: #b91c1c;
+}
+
+.dashboard-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+  
+}
+
+.stat-card,
+.dashboard-card,
+.course-card,
+.profile-item {
+  background: #030969;
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+  border: 1px solid #eef2f7;
+}
+
+.stat-card h3,
+.dashboard-card h3,
+.course-card h4 {
+  margin-bottom: 10px;
+  color: #ffffff;
+}
+
+.stat-card p {
+  font-size: 1.95rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: #d1ce0e;
+}
+
+.stat-card span {
+  color: #fdfdff;
+  font-size: 0.92rem;
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 18px;
+}
+
+.dashboard-card table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+
+.dashboard-card th,
+.dashboard-card td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+  font-size: 0.95rem;
+}
+
+.dashboard-card th {
+  color: #ffffff;
+  font-weight: 600;
+  background: #1d0249;
+}
+
+.dashboard-card ul {
+  margin: 12px 0 0;
+  padding-left: 18px;
+  color: #4b5563;
+}
+
+.dashboard-card li {
+  margin-bottom: 10px;
+}
+
+.course-grid,
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.profile-item span {
+  display: block;
+  color: #f8f9fa;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+}
+
+.profile-item strong {
+  color: #d1bd0a;
+}
+
+.status {
+  font-weight: 600;
+}
+
+.status.pending {
+  color: #d97706;
+}
+
+.status.approved {
+  color: #059669;
+}
+
+.mobile-menu-btn {
+  display: none;
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 1200;
+  border: none;
+  background: #1d4ed8;
+  color: #fff;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(29, 78, 216, 0.25);
+}
+
+@media (max-width: 992px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .mobile-menu-btn {
+    display: block;
+  }
+
+  .dashboard-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    z-index: 1100;
+    transform: translateX(-100%);
+  }
+
+  .dashboard-sidebar.show {
+    transform: translateX(0);
+  }
+
+  .dashboard-main {
+    width: 100%;
+    padding: 72px 16px 20px;
+  }
+
+  .topbar-right {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .topbar-right input,
+  .logout-btn {
+    width: 100%;
+  }
+}

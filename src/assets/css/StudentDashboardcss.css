@@ -1,0 +1,352 @@
+/* ====== STUDENT DASHBOARD ====== */
+
+.student-dashboard {
+  display: flex;
+  min-height: 100vh;
+  background: #f0f4f8;
+  font-family: "Segoe UI", sans-serif;
+}
+
+/* Sidebar */
+.student-dashboard .dashboard-sidebar {
+  width: 240px;
+  min-width: 240px;
+  background: linear-gradient(180deg, #0A2342 0%, #0F3256 100%);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  padding: 0 0 20px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.student-dashboard .sidebar-header {
+  padding: 28px 20px 22px;
+  border-bottom: 1px solid rgba(212,175,55,0.25);
+  text-align: center;
+}
+
+.student-dashboard .sidebar-logo {
+  width: 54px; height: 54px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #D4AF37;
+  margin-bottom: 10px;
+}
+
+.student-dashboard .sidebar-header h3 {
+  font-size: 1rem;
+  color: #D4AF37;
+  margin: 0 0 4px;
+}
+
+.student-dashboard .sidebar-header p {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.65);
+  margin: 0;
+}
+
+.student-dashboard .sidebar-menu {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 0;
+  flex: 1;
+}
+
+.student-dashboard .menu-item {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.82);
+  padding: 13px 22px;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-left: 3px solid transparent;
+  transition: all 0.22s ease;
+  width: 100%;
+}
+
+.student-dashboard .menu-item:hover {
+  background: rgba(212,175,55,0.1);
+  border-left-color: rgba(212,175,55,0.5);
+  color: white;
+}
+
+.student-dashboard .menu-item.active {
+  background: rgba(212,175,55,0.18);
+  border-left-color: #D4AF37;
+  color: #D4AF37;
+  font-weight: 600;
+}
+
+.student-dashboard .menu-item.logout {
+  margin-top: auto;
+  border-top: 1px solid rgba(212,175,55,0.2);
+  color: #fca5a5;
+}
+
+.student-dashboard .menu-item.logout:hover {
+  background: rgba(239,68,68,0.12);
+  border-left-color: #ef4444;
+}
+
+/* Main Content */
+.student-dashboard .dashboard-content {
+  flex: 1;
+  padding: 32px 36px;
+  overflow-y: auto;
+  background: #f0f4f8;
+  min-height: 100vh;
+}
+
+.student-dashboard .dashboard-section {
+  animation: sd-fadeUp 0.35s ease;
+}
+
+@keyframes sd-fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.student-dashboard .dashboard-section h1 {
+  font-size: 1.75rem;
+  color: #0A2342;
+  margin-bottom: 24px;
+  font-weight: 700;
+}
+
+.student-dashboard .dashboard-section h2 {
+  font-size: 1.4rem;
+  color: #0A2342;
+  margin-bottom: 20px;
+  font-weight: 700;
+}
+
+.student-dashboard .dashboard-section h3 {
+  font-size: 1.1rem;
+  color: #0A2342;
+  margin-bottom: 14px;
+  font-weight: 600;
+}
+
+/* Profile Card */
+.student-dashboard .profile-card {
+  background: white;
+  border-radius: 18px;
+  padding: 28px;
+  box-shadow: 0 4px 20px rgba(10,35,66,0.08);
+  border: 1px solid #e8ecf0;
+}
+
+.student-dashboard .profile-header {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  margin-bottom: 24px;
+  padding-bottom: 22px;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+.student-dashboard .avatar-placeholder {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0A2342, #D4AF37);
+  color: white;
+  font-size: 2rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.student-dashboard .profile-info h2 { font-size: 1.3rem; color: #0A2342; margin-bottom: 4px; }
+.student-dashboard .profile-info .email { color: #64748b; font-size: 0.9rem; margin-bottom: 4px; }
+.student-dashboard .profile-info .register-number { color: #D4AF37; font-size: 0.85rem; font-weight: 600; }
+
+.student-dashboard .profile-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.student-dashboard .detail-item {
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 14px 16px;
+  border: 1px solid #e8ecf0;
+}
+
+.student-dashboard .label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #94a3b8;
+  margin-bottom: 5px;
+}
+
+.student-dashboard .value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #0A2342;
+}
+
+/* Badges */
+.student-dashboard .badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.student-dashboard .badge-primary  { background: rgba(10,35,66,0.1);   color: #0A2342; }
+.student-dashboard .badge-success  { background: rgba(34,197,94,0.12);  color: #16a34a; }
+.student-dashboard .badge-danger   { background: rgba(239,68,68,0.12);  color: #dc2626; }
+.student-dashboard .badge-warning  { background: rgba(245,158,11,0.12); color: #b45309; }
+
+/* Attendance */
+.student-dashboard .attendance-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.student-dashboard .summary-card {
+  background: white;
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 2px 12px rgba(10,35,66,0.06);
+  border: 1px solid #e8ecf0;
+}
+
+.student-dashboard .summary-card h4 {
+  color: #0A2342;
+  margin-bottom: 12px;
+  font-size: 0.95rem;
+}
+
+.student-dashboard .progress-bar {
+  background: #e8ecf0;
+  border-radius: 999px;
+  height: 8px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.student-dashboard .progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #D4AF37, #c09a2f);
+  border-radius: 999px;
+  transition: width 0.5s ease;
+}
+
+.student-dashboard .summary-card p {
+  font-size: 0.85rem;
+  color: #0A2342;
+  font-weight: 600;
+}
+
+/* Semester sections */
+.student-dashboard .semester-section {
+  margin-bottom: 28px;
+}
+
+/* Data Table */
+.student-dashboard .data-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  box-shadow: 0 4px 20px rgba(10,35,66,0.06);
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid #e8ecf0;
+  margin-bottom: 24px;
+}
+
+.student-dashboard .data-table thead {
+  background: linear-gradient(135deg, #0A2342, #0F3256);
+}
+
+.student-dashboard .data-table thead th {
+  padding: 14px 16px;
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.student-dashboard .data-table tbody td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+.student-dashboard .data-table tbody tr:last-child td { border-bottom: none; }
+.student-dashboard .data-table tbody tr:hover { background: rgba(212,175,55,0.04); }
+
+/* Empty state */
+.student-dashboard .empty-state {
+  text-align: center;
+  padding: 50px;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+/* Notices */
+.student-dashboard .notices-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
+}
+
+.student-dashboard .notice-card {
+  background: white;
+  border-radius: 14px;
+  padding: 20px;
+  border: 1px solid #e8ecf0;
+  box-shadow: 0 2px 12px rgba(10,35,66,0.06);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.student-dashboard .notice-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(10,35,66,0.1);
+}
+
+.student-dashboard .notice-card h3 { font-size: 1rem; color: #0A2342; margin-bottom: 8px; }
+.student-dashboard .notice-card p  { font-size: 0.88rem; color: #64748b; line-height: 1.6; }
+.student-dashboard .notice-card small { font-size: 0.78rem; color: #94a3b8; margin-top: 8px; display: block; }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .student-dashboard { flex-direction: column; }
+  .student-dashboard .dashboard-sidebar {
+    width: 100%; min-width: 0; height: auto; position: sticky; top: 0; z-index: 100;
+  }
+  .student-dashboard .sidebar-menu {
+    flex-direction: row; flex-wrap: wrap; padding: 10px 12px; gap: 6px;
+  }
+  .student-dashboard .menu-item {
+    border-radius: 8px; border-left: none; border-bottom: 2px solid transparent;
+    flex: 1; min-width: 120px; text-align: center; padding: 10px;
+  }
+  .student-dashboard .menu-item.active { border-bottom-color: #D4AF37; }
+  .student-dashboard .dashboard-content { padding: 20px; }
+}
+
+@media (max-width: 600px) {
+  .student-dashboard .profile-header { flex-direction: column; text-align: center; }
+  .student-dashboard .profile-details { grid-template-columns: 1fr; }
+  .student-dashboard .attendance-summary { grid-template-columns: 1fr; }
+  .student-dashboard .notices-grid { grid-template-columns: 1fr; }
+}
