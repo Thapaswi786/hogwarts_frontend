@@ -255,10 +255,10 @@ export default function AdminDashboard() {
     catch { toast.error("Delete failed"); }
   };
 
-  const updateFeeStatus = async (id, paidAmount) => {
+  /*const updateFeeStatus = async (id, paidAmount) => {
     try { await feeAPI.updateFee(id, { paidAmount }); const r = await feeAPI.getAllFees(); setFees(r.data); }
     catch { toast.error("Update failed"); }
-  };
+  };*/
 
   // ── Placements ────────────────────────────────────────────────────────
   const addPlacement = (e) => {
