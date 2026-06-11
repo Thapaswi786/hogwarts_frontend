@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -23,11 +23,15 @@ import AdminDashboard from "../Dashboard/AdminDashboard";
 
 function AppRouters() {
   const location = useLocation();
-  const isDashboard = ["/admin", "/teacher", "/student"].includes(location.pathname);
+  const hideLayout = ["/admin", "/teacher", "/student", "/login", "/register"].includes(location.pathname);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   return (
     <>
-      {!isDashboard && <Navbar />}
+      {!hideLayout && <Navbar />}
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
@@ -72,7 +76,7 @@ function AppRouters() {
         <Route path="/home" element={<Navigate to="/" replace />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
-      {!isDashboard && <Footer />}
+      {!hideLayout && <Footer />}
     </>
   );
 }

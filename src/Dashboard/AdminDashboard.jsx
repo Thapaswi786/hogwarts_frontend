@@ -1,25 +1,31 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { adminAPI, studentAPI, teacherAPI, noticeAPI } from "../utils/api";
+import { adminAPI, studentAPI, teacherAPI, noticeAPI, feeAPI, contactAPI } from "../utils/api";
 import { toast } from "react-toastify";
-import {
-  BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis,
-  CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-} from "recharts";
 import logo from "../assets/logo.png";
 import "../assets/css/AdminDashboard.css";
 
-const CHART_COLORS = ["#0A2342", "#D4AF37", "#2ed573", "#3498db", "#e74c3c"];
 const DEPARTMENTS = ["Computer Science","Electronics","Mechanical","Civil","Electrical","Information Technology"];
 
-function useLocalStorage(key, init) {
-  const [val, setVal] = useState(() => {
-    try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : init; } catch { return init; }
-  });
-  const set = (v) => { setVal(v); localStorage.setItem(key, JSON.stringify(v)); };
-  return [val, set];
-}
+const RECENT_ACTIVITIES = [
+  { icon: "🟢", label: "Student Registered",        time: "5 mins ago" },
+  { icon: "💰", label: "Fee Payment Received",       time: "20 mins ago" },
+  { icon: "👨🏫", label: "Teacher Added",             time: "1 hour ago" },
+  { icon: "📋", label: "Attendance Updated",         time: "2 hours ago" },
+  { icon: "🏢", label: "Placement Record Added",     time: "3 hours ago" },
+  { icon: "🟢", label: "Student Registered",         time: "4 hours ago" },
+  { icon: "📢", label: "Notice Published",           time: "5 hours ago" },
+  { icon: "💰", label: "Fee Payment Received",       time: "Yesterday" },
+];
+
+const UPCOMING_EVENTS = [
+  { date: "15 June 2026", title: "Internal Examination" },
+  { date: "18 June 2026", title: "Placement Drive" },
+  { date: "20 June 2026", title: "Parent Meeting" },
+  { date: "25 June 2026", title: "Project Review" },
+  { date: "30 June 2026", title: "Semester End Exams" },
+];
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
@@ -30,6 +36,7 @@ export default function AdminDashboard() {
   const [teachers, setTeachers]   = useState([]);
   const [pending, setPending]     = useState([]);
   const [notices, setNotices]     = useState([]);
+  const [messages, setMessages]   = useState([]);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [loading, setLoading]     = useState(true);
   const [search, setSearch]       = useState("");
@@ -50,30 +57,38 @@ export default function AdminDashboard() {
   const [addingTe, setAddingTe] = useState(false);
 
   // Notice form
-  const [noticeForm, setNoticeForm]   = useState({ title: "", description: "", priority: "normal", department: "All" });
+  const [noticeForm, setNoticeForm]   = useState({ title: "", description: "", priority: "normal", department: "All", targetAudience: "all" });
   const [savingNotice, setSavingNotice] = useState(false);
   const [editNotice, setEditNotice]   = useState(null);
 
   // Persistent fee & placement
-  const [fees, setFees]               = useLocalStorage("gec_fees", []);
-  const [feeForm, setFeeForm]         = useState({ studentName: "", amount: "", semester: "1", status: "pending", description: "" });
+  const [fees, setFees]               = useState([]);
+  const [feeForm, setFeeForm]         = useState({ studentId: "", totalFees: "", paidAmount: "0", paymentDate: "", paymentMethod: "", remarks: "" });
+  const [addingFee, setAddingFee]     = useState(false);
 
-  const [placements, setPlacements]   = useLocalStorage("gec_placements", []);
+  const [placements, setPlacements]   = useState([]);
   const [placementForm, setPlacementForm] = useState({ studentName: "", company: "", role: "", package: "", year: new Date().getFullYear(), status: "placed" });
 
   // ── Fetch all data ────────────────────────────────────────────────────
   const fetchAll = useCallback(async () => {
     try {
-      const [s, st, te, p, n] = await Promise.all([
+      const [s, st, te, p, n, f, msgs] = await Promise.allSettled([
         adminAPI.getDashboardStats(),
         studentAPI.getAllStudents(),
         teacherAPI.getAllTeachers(),
         adminAPI.getPendingApprovals(),
         noticeAPI.getAllNotices(),
+        feeAPI.getAllFees(),
+        contactAPI.getAllMessages(),
       ]);
-      setStats(s.data); setStudents(st.data); setTeachers(te.data);
-      setPending(p.data); setNotices(n.data);
-    } catch { toast.error("Failed to load dashboard data"); }
+      if (s.status    === 'fulfilled') setStats(s.value.data);
+      if (st.status   === 'fulfilled') setStudents(Array.isArray(st.value.data) ? st.value.data : []);
+      if (te.status   === 'fulfilled') setTeachers(Array.isArray(te.value.data) ? te.value.data : []);
+      if (p.status    === 'fulfilled') setPending(Array.isArray(p.value.data) ? p.value.data : []);
+      if (n.status    === 'fulfilled') setNotices(Array.isArray(n.value.data) ? n.value.data : []);
+      if (f.status    === 'fulfilled') setFees(Array.isArray(f.value.data) ? f.value.data : []);
+      if (msgs.status === 'fulfilled') setMessages(Array.isArray(msgs.value.data) ? msgs.value.data : []);
+    } catch { toast.error('Failed to load dashboard data'); }
     finally { setLoading(false); }
   }, []);
 
@@ -191,7 +206,7 @@ export default function AdminDashboard() {
         await noticeAPI.createNotice({ ...noticeForm });
         toast.success("Notice published!");
       }
-      setNoticeForm({ title: "", description: "", priority: "normal", department: "All" });
+      setNoticeForm({ title: "", description: "", priority: "normal", department: "All", targetAudience: "all" });
       const r = await noticeAPI.getAllNotices(); setNotices(r.data);
     } catch (e) { toast.error(e.response?.data?.error || "Failed"); }
     finally { setSavingNotice(false); }
@@ -199,12 +214,12 @@ export default function AdminDashboard() {
 
   const startEditNotice = (n) => {
     setEditNotice(n._id);
-    setNoticeForm({ title: n.title, description: n.description, priority: n.priority, department: n.department });
+    setNoticeForm({ title: n.title, description: n.description, priority: n.priority, department: n.department, targetAudience: n.targetAudience || "all" });
   };
 
   const cancelNoticeEdit = () => {
     setEditNotice(null);
-    setNoticeForm({ title: "", description: "", priority: "normal", department: "All" });
+    setNoticeForm({ title: "", description: "", priority: "normal", department: "All", targetAudience: "all" });
   };
 
   const deleteNotice = async (id) => {
@@ -214,15 +229,36 @@ export default function AdminDashboard() {
   };
 
   // ── Fees ──────────────────────────────────────────────────────────────
-  const addFee = (e) => {
+  const addFee = async (e) => {
     e.preventDefault();
-    if (!feeForm.studentName || !feeForm.amount) { toast.error("Name and amount required"); return; }
-    setFees([...fees, { ...feeForm, id: Date.now(), createdAt: new Date().toISOString() }]);
-    setFeeForm({ studentName: "", amount: "", semester: "1", status: "pending", description: "" });
-    toast.success("Fee record added!");
+    if (!feeForm.studentId || !feeForm.totalFees) { toast.error("Student and total fees required"); return; }
+    setAddingFee(true);
+    try {
+      await feeAPI.createFee({
+        studentId:     feeForm.studentId,
+        totalFees:     Number(feeForm.totalFees),
+        paidAmount:    Number(feeForm.paidAmount || 0),
+        paymentDate:   feeForm.paymentDate || null,
+        paymentMethod: feeForm.paymentMethod,
+        remarks:       feeForm.remarks,
+      });
+      toast.success("Fee record added!");
+      setFeeForm({ studentId: "", totalFees: "", paidAmount: "0", paymentDate: "", paymentMethod: "", remarks: "" });
+      const r = await feeAPI.getAllFees(); setFees(r.data);
+    } catch (err) { toast.error(err.response?.data?.error || "Failed to add fee"); }
+    finally { setAddingFee(false); }
   };
-  const setFeeStatus = (id, status) => { setFees(fees.map(f => f.id === id ? { ...f, status } : f)); };
-  const deleteFee = (id) => { if (window.confirm("Delete fee record?")) setFees(fees.filter(f => f.id !== id)); };
+
+  const deleteFee = async (id) => {
+    if (!window.confirm("Delete fee record?")) return;
+    try { await feeAPI.deleteFee(id); const r = await feeAPI.getAllFees(); setFees(r.data); toast.success("Deleted"); }
+    catch { toast.error("Delete failed"); }
+  };
+
+  const updateFeeStatus = async (id, paidAmount) => {
+    try { await feeAPI.updateFee(id, { paidAmount }); const r = await feeAPI.getAllFees(); setFees(r.data); }
+    catch { toast.error("Update failed"); }
+  };
 
   // ── Placements ────────────────────────────────────────────────────────
   const addPlacement = (e) => {
@@ -266,6 +302,7 @@ export default function AdminDashboard() {
             { id: "fees",       icon: "💰", label: `Fees (${fees.length})` },
             { id: "placements", icon: "🏢", label: `Placements (${placements.length})` },
             { id: "notices",    icon: "📢", label: "Notices" },
+            { id: "messages",   icon: "✉️", label: `Messages (${messages.filter(m => !m.isRead).length})` },
           ].map(item => (
             <button key={item.id} type="button"
               className={`menu-item${activeTab === item.id ? " active" : ""}`}
@@ -313,28 +350,32 @@ export default function AdminDashboard() {
 
             <div className="charts-grid">
               <div className="chart-card">
-                <h3>Students by Department</h3>
-                <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={stats?.studentsByDepartment || []} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis dataKey="_id" tick={{ fontSize: 10 }} />
-                    <YAxis tick={{ fontSize: 11 }} />
-                    <Tooltip />
-                    <Bar dataKey="count" fill="#D4AF37" radius={[6,6,0,0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                <h3>🕐 Recent Activities</h3>
+                <div className="activity-list">
+                  {RECENT_ACTIVITIES.map((a, i) => (
+                    <div key={i} className="activity-item">
+                      <span className="activity-icon">{a.icon}</span>
+                      <div className="activity-body">
+                        <span className="activity-label">{a.label}</span>
+                        <span className="activity-time">{a.time}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
               <div className="chart-card">
-                <h3>Users by Role</h3>
-                <ResponsiveContainer width="100%" height={260}>
-                  <PieChart>
-                    <Pie data={stats?.usersByRole || []} dataKey="count" nameKey="_id"
-                      cx="50%" cy="50%" outerRadius={95} label={({ _id, count }) => `${_id}: ${count}`}>
-                      {(stats?.usersByRole || []).map((e, i) => <Cell key={e._id} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
-                    </Pie>
-                    <Tooltip /><Legend />
-                  </PieChart>
-                </ResponsiveContainer>
+                <h3>📅 Upcoming Events</h3>
+                <div className="events-list">
+                  {UPCOMING_EVENTS.map((ev, i) => (
+                    <div key={i} className="event-item">
+                      <div className="event-icon">📅</div>
+                      <div className="event-body">
+                        <span className="event-title">{ev.title}</span>
+                        <span className="event-date">{ev.date}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -368,7 +409,10 @@ export default function AdminDashboard() {
                   <div key={n._id} className="notice-card">
                     <div className="notice-header">
                       <h3>{n.title}</h3>
-                      <span className={`badge badge-${n.priority === "high" ? "danger" : "warning"}`}>{n.priority}</span>
+                      <div style={{ display: "flex", gap: 5 }}>
+                        <span className={`badge badge-${n.priority === "high" ? "danger" : "warning"}`}>{n.priority}</span>
+                        <span className="badge badge-secondary">{n.targetAudience || "all"}</span>
+                      </div>
                     </div>
                     <p>{n.description}</p>
                     <small>{new Date(n.createdAt).toLocaleDateString()}</small>
@@ -620,40 +664,50 @@ export default function AdminDashboard() {
               <h3>💰 Add Fee Record</h3>
               <form onSubmit={addFee}>
                 <div className="form-row">
-                  <div className="form-group"><label>Student Name *</label>
-                    <input placeholder="Student name" value={feeForm.studentName} onChange={e => setFeeForm(f => ({ ...f, studentName: e.target.value }))} /></div>
-                  <div className="form-group"><label>Amount (₹) *</label>
-                    <input type="number" placeholder="50000" value={feeForm.amount} onChange={e => setFeeForm(f => ({ ...f, amount: e.target.value }))} /></div>
-                  <div className="form-group"><label>Semester</label>
-                    <select value={feeForm.semester} onChange={e => setFeeForm(f => ({ ...f, semester: e.target.value }))}>
-                      {[1,2,3,4,5,6,7,8].map(n => <option key={n} value={n}>Sem {n}</option>)}</select></div>
-                  <div className="form-group"><label>Status</label>
-                    <select value={feeForm.status} onChange={e => setFeeForm(f => ({ ...f, status: e.target.value }))}>
-                      <option value="pending">Pending</option><option value="paid">Paid</option><option value="overdue">Overdue</option></select></div>
+                  <div className="form-group"><label>Student *</label>
+                    <select value={feeForm.studentId} onChange={e => setFeeForm(f => ({ ...f, studentId: e.target.value }))}>
+                      <option value="">-- Select Student --</option>
+                      {students.map(s => (
+                        <option key={s._id} value={s._id}>
+                          {s.userId?.name} ({s.registerNumber})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group"><label>Total Fees (₹) *</label>
+                    <input type="number" placeholder="e.g. 50000" value={feeForm.totalFees} onChange={e => setFeeForm(f => ({ ...f, totalFees: e.target.value }))} /></div>
+                  <div className="form-group"><label>Paid Amount (₹)</label>
+                    <input type="number" placeholder="0" value={feeForm.paidAmount} onChange={e => setFeeForm(f => ({ ...f, paidAmount: e.target.value }))} /></div>
+                  <div className="form-group"><label>Payment Date</label>
+                    <input type="date" value={feeForm.paymentDate} onChange={e => setFeeForm(f => ({ ...f, paymentDate: e.target.value }))} /></div>
+                  <div className="form-group"><label>Payment Method</label>
+                    <input placeholder="Cash / Online / DD" value={feeForm.paymentMethod} onChange={e => setFeeForm(f => ({ ...f, paymentMethod: e.target.value }))} /></div>
+                  <div className="form-group"><label>Remarks</label>
+                    <input placeholder="Tuition fee / Exam fee…" value={feeForm.remarks} onChange={e => setFeeForm(f => ({ ...f, remarks: e.target.value }))} /></div>
                 </div>
-                <div className="form-group"><label>Description</label>
-                  <input placeholder="Tuition fee / Exam fee…" value={feeForm.description} onChange={e => setFeeForm(f => ({ ...f, description: e.target.value }))} /></div>
-                <button type="submit" className="btn btn-primary">💾 Add Record</button>
+                <button type="submit" className="btn btn-primary" disabled={addingFee}>
+                  {addingFee ? "Adding…" : "💾 Add Record"}
+                </button>
               </form>
             </div>
             <div className="section-subheading">All Fee Records ({fees.length})</div>
             {fees.length === 0 ? <p className="empty-state">No fee records yet.</p> : (
               <div className="table-wrap">
                 <table className="data-table">
-                  <thead><tr><th>#</th><th>Student</th><th>Amount</th><th>Sem</th><th>Description</th><th>Status</th><th>Actions</th></tr></thead>
+                  <thead><tr><th>#</th><th>Student</th><th>Total</th><th>Paid</th><th>Due</th><th>Status</th><th>Method</th><th>Remarks</th><th>Actions</th></tr></thead>
                   <tbody>
                     {fees.map((f, i) => (
-                      <tr key={f.id}>
+                      <tr key={f._id}>
                         <td>{i + 1}</td>
-                        <td><strong>{f.studentName}</strong></td>
-                        <td>₹{Number(f.amount).toLocaleString("en-IN")}</td>
-                        <td>Sem {f.semester}</td>
-                        <td>{f.description || "—"}</td>
-                        <td><span className={`badge badge-${f.status === "paid" ? "success" : f.status === "overdue" ? "danger" : "warning"}`}>{f.status}</span></td>
+                        <td><strong>{f.studentId?.userId?.name || "—"}</strong></td>
+                        <td>₹{(f.totalFees || 0).toLocaleString("en-IN")}</td>
+                        <td>₹{(f.paidAmount || 0).toLocaleString("en-IN")}</td>
+                        <td>₹{(f.dueAmount || 0).toLocaleString("en-IN")}</td>
+                        <td><span className={`badge badge-${f.status === "paid" ? "success" : f.status === "partial" ? "warning" : "danger"}`}>{f.status}</span></td>
+                        <td>{f.paymentMethod || "—"}</td>
+                        <td>{f.remarks || "—"}</td>
                         <td className="action-cell">
-                          {f.status !== "paid"    && <button className="btn btn-sm btn-success" onClick={() => setFeeStatus(f.id, "paid")}>Paid</button>}
-                          {f.status !== "overdue" && <button className="btn btn-sm btn-danger"  onClick={() => setFeeStatus(f.id, "overdue")}>Overdue</button>}
-                          <button className="btn btn-sm btn-ghost" onClick={() => deleteFee(f.id)}>🗑</button>
+                          <button className="btn btn-sm btn-ghost" onClick={() => deleteFee(f._id)}>🗑</button>
                         </td>
                       </tr>
                     ))}
@@ -746,6 +800,12 @@ export default function AdminDashboard() {
                     <select value={noticeForm.department} onChange={e => setNoticeForm(f => ({ ...f, department: e.target.value }))}>
                       <option value="All">All Departments</option>
                       {DEPARTMENTS.map(d => <option key={d}>{d}</option>)}</select></div>
+                  <div className="form-group"><label>Send To</label>
+                    <select value={noticeForm.targetAudience} onChange={e => setNoticeForm(f => ({ ...f, targetAudience: e.target.value }))}>
+                      <option value="all">All (Students &amp; Teachers)</option>
+                      <option value="students">Students Only</option>
+                      <option value="teachers">Teachers Only</option>
+                    </select></div>
                 </div>
                 <div className="form-group"><label>Description *</label>
                   <textarea rows="3" placeholder="Short description…" value={noticeForm.description} onChange={e => setNoticeForm(f => ({ ...f, description: e.target.value }))} /></div>
@@ -764,7 +824,10 @@ export default function AdminDashboard() {
                 <div key={n._id} className="notice-card">
                   <div className="notice-header">
                     <h3>{n.title}</h3>
-                    <span className={`badge badge-${n.priority === "high" ? "danger" : n.priority === "normal" ? "primary" : "warning"}`}>{n.priority}</span>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <span className={`badge badge-${n.priority === "high" ? "danger" : n.priority === "normal" ? "primary" : "warning"}`}>{n.priority}</span>
+                      <span className="badge badge-secondary">{n.targetAudience || "all"}</span>
+                    </div>
                   </div>
                   <p>{n.description}</p>
                   <div className="notice-footer">
@@ -777,6 +840,53 @@ export default function AdminDashboard() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* ─── MESSAGES ─── */}
+        {activeTab === "messages" && (
+          <div className="dashboard-section">
+            <div className="section-heading"><h1>Contact Messages</h1></div>
+            {messages.length === 0 ? <p className="empty-state">No messages yet.</p> : (
+              <div className="table-wrap">
+                <table className="data-table">
+                  <thead>
+                    <tr><th>#</th><th>Name</th><th>Email</th><th>Subject</th><th>Message</th><th>Date</th><th>Status</th><th>Actions</th></tr>
+                  </thead>
+                  <tbody>
+                    {messages.map((msg, i) => (
+                      <tr key={msg._id} style={{ background: msg.isRead ? "" : "rgba(212,175,55,0.07)" }}>
+                        <td>{i + 1}</td>
+                        <td><strong>{msg.name}</strong></td>
+                        <td>{msg.email}</td>
+                        <td>{msg.subject}</td>
+                        <td style={{ maxWidth: 260, wordBreak: "break-word" }}>{msg.message}</td>
+                        <td>{new Date(msg.createdAt).toLocaleDateString("en-IN")}</td>
+                        <td>
+                          <span className={`badge badge-${msg.isRead ? "success" : "warning"}`}>
+                            {msg.isRead ? "Read" : "Unread"}
+                          </span>
+                        </td>
+                        <td className="action-cell">
+                          {!msg.isRead && (
+                            <button className="btn btn-sm btn-edit" onClick={async () => {
+                              await contactAPI.markAsRead(msg._id);
+                              setMessages(ms => ms.map(m => m._id === msg._id ? { ...m, isRead: true } : m));
+                            }}>✔ Read</button>
+                          )}
+                          <button className="btn btn-sm btn-ghost" onClick={async () => {
+                            if (!window.confirm("Delete this message?")) return;
+                            await contactAPI.deleteMessage(msg._id);
+                            setMessages(ms => ms.filter(m => m._id !== msg._id));
+                            toast.success("Deleted");
+                          }}>🗑</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
 

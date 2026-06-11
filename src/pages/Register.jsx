@@ -51,22 +51,10 @@ function Register() {
     setLoading(false);
   };
 
-  const Field = ({ label, name, type = "text", required }) => (
-    <div className="form-group">
-      <label htmlFor={`reg-${name}`}>
-        {label}{required && <span style={{ color: "var(--secondary,#D4AF37)" }}> *</span>}
-      </label>
-      <input
-        id={`reg-${name}`} name={name} type={type}
-        value={form[name]} onChange={handleChange}
-        required={required} disabled={loading}
-      />
-    </div>
-  );
-
   return (
     <main className="page form-wrap">
       <PageTitle title="Register" />
+
 
       <div className="form-card" style={{ maxWidth: "520px" }}>
         <div style={{ textAlign: "center", marginBottom: "22px" }}>
@@ -90,19 +78,31 @@ function Register() {
               className={accountType === r ? "active" : ""}
               onClick={() => setAccountType(r)}
             >
-              {r === "student" ? "🎓" : "👨🏫"} {r.charAt(0).toUpperCase() + r.slice(1)}
+              {r === "student" ? "🎓" : "👨"} {r.charAt(0).toUpperCase() + r.slice(1)}
             </button>
           ))}
         </div>
 
         <form onSubmit={handleSubmit} noValidate>
-          <Field label="Full Name"      name="name"  required />
-          <Field label="Email Address"  name="email" type="email" required />
-          <Field label="Phone Number"   name="phone" type="tel" />
+          <div className="form-group">
+            <label htmlFor="reg-name">Full Name<span style={{ color: "var(--secondary,#D4AF37)" }}> *</span></label>
+            <input id="reg-name" name="name" type="text" value={form.name} onChange={handleChange} required disabled={loading} />
+          </div>
+          <div className="form-group">
+            <label htmlFor="reg-email">Email Address<span style={{ color: "var(--secondary,#D4AF37)" }}> *</span></label>
+            <input id="reg-email" name="email" type="email" value={form.email} onChange={handleChange} required disabled={loading} />
+          </div>
+          <div className="form-group">
+            <label htmlFor="reg-phone">Phone Number</label>
+            <input id="reg-phone" name="phone" type="tel" value={form.phone} onChange={handleChange} disabled={loading} />
+          </div>
 
           {accountType === "student" ? (
             <>
-              <Field label="Register Number" name="registerNumber" required />
+              <div className="form-group">
+                <label htmlFor="reg-registerNumber">Register Number<span style={{ color: "var(--secondary,#D4AF37)" }}> *</span></label>
+                <input id="reg-registerNumber" name="registerNumber" type="text" value={form.registerNumber} onChange={handleChange} required disabled={loading} />
+              </div>
               <div className="form-group">
                 <label htmlFor="reg-semester">
                   Semester <span style={{ color: "var(--secondary,#D4AF37)" }}>*</span>
@@ -117,8 +117,14 @@ function Register() {
             </>
           ) : (
             <>
-              <Field label="Employee ID" name="employeeId" required />
-              <Field label="Subject"     name="subject"    required />
+              <div className="form-group">
+                <label htmlFor="reg-employeeId">Employee ID<span style={{ color: "var(--secondary,#D4AF37)" }}> *</span></label>
+                <input id="reg-employeeId" name="employeeId" type="text" value={form.employeeId} onChange={handleChange} required disabled={loading} />
+              </div>
+              <div className="form-group">
+                <label htmlFor="reg-subject">Subject<span style={{ color: "var(--secondary,#D4AF37)" }}> *</span></label>
+                <input id="reg-subject" name="subject" type="text" value={form.subject} onChange={handleChange} required disabled={loading} />
+              </div>
             </>
           )}
 
@@ -133,8 +139,14 @@ function Register() {
             </select>
           </div>
 
-          <Field label="Password"         name="password"        type="password" required />
-          <Field label="Confirm Password" name="confirmPassword" type="password" required />
+          <div className="form-group">
+            <label htmlFor="reg-password">Password<span style={{ color: "var(--secondary,#D4AF37)" }}> *</span></label>
+            <input id="reg-password" name="password" type="password" value={form.password} onChange={handleChange} required disabled={loading} />
+          </div>
+          <div className="form-group">
+            <label htmlFor="reg-confirmPassword">Confirm Password<span style={{ color: "var(--secondary,#D4AF37)" }}> *</span></label>
+            <input id="reg-confirmPassword" name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange} required disabled={loading} />
+          </div>
 
           <button type="submit" className="main-btn" disabled={loading}>
             {loading ? "Submitting..." : "Register"}
@@ -147,6 +159,15 @@ function Register() {
             Login here
           </Link>
         </p>
+        <div style={{ width: "100%", maxWidth: "520px", marginBottom: "12px" }}>
+        <a href="/" style={{
+          display: "inline-flex", alignItems: "center", gap: "6px",
+          color: "var(--secondary,#D4AF37)", textDecoration: "none",
+          fontSize: "0.9rem", fontWeight: "600"
+        }}>
+          ← Back to Home
+        </a>
+      </div>
       </div>
     </main>
   );

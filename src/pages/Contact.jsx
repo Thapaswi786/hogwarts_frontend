@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import PageTitle from "../components/PageTitle";
+import { contactAPI } from "../utils/api";
+import { toast } from "react-toastify";
 
 function Contact() {
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
@@ -20,11 +22,16 @@ function Contact() {
     setErrors({ ...errors, [e.target.name]: "" });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const e2 = validate();
     if (Object.keys(e2).length) { setErrors(e2); return; }
-    setSent(true);
+    try {
+      await contactAPI.sendMessage(form);
+      setSent(true);
+    } catch {
+      toast.error("Failed to send message. Please try again.");
+    }
   };
 
   const contactItems = [

@@ -33,6 +33,7 @@ function Login() {
     <main className="page form-wrap">
       <PageTitle title="Login" />
 
+
       <div className="form-card">
         <div style={{ textAlign: "center", marginBottom: "22px" }}>
           <div style={{
@@ -108,6 +109,17 @@ function Login() {
             Register here
           </Link>
         </p>
+
+        <div style={{ width: "100%", maxWidth: "440px", marginBottom: "12px" }}>
+        <a href="/" style={{
+          display: "inline-flex", alignItems: "center", gap: "6px",
+          color: "var(--secondary,#D4AF37)", textDecoration: "none",
+          fontSize: "0.9rem", fontWeight: "600"
+        }}>
+          ← Back to Home
+        </a>
+      </div>
+      
       </div>
     </main>
   );

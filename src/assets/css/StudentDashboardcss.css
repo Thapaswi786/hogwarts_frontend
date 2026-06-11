@@ -350,3 +350,35 @@
   .student-dashboard .attendance-summary { grid-template-columns: 1fr; }
   .student-dashboard .notices-grid { grid-template-columns: 1fr; }
 }
+
+/* Fees */
+.student-dashboard .fees-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.student-dashboard .fee-summary-card {
+  background: white;
+  border-radius: 14px;
+  padding: 20px;
+  border: 1px solid #e8ecf0;
+  border-top: 4px solid #0A2342;
+  box-shadow: 0 2px 12px rgba(10,35,66,0.06);
+  text-align: center;
+}
+
+.student-dashboard .fee-summary-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.student-dashboard .fee-summary-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #94a3b8;
+}

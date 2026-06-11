@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { studentAPI, attendanceAPI, marksAPI, noticeAPI } from "../utils/api";
+import { studentAPI, attendanceAPI, marksAPI, noticeAPI, feeAPI } from "../utils/api";
 import { toast } from "react-toastify";
 import logo from "../assets/logo.png";
 import "../assets/css/StudentDashboardcss.css";
@@ -16,36 +16,47 @@ function StudentDashboard() {
   const [attendance, setAttendance] = useState(null);
   const [marks, setMarks] = useState(null);
   const [notices, setNotices] = useState([]);
+  const [fees, setFees] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [profileRes, attendanceRes, marksRes, noticesRes] = await Promise.all([
+        const [profileRes, attendanceRes, marksRes, noticesRes, feesRes] = await Promise.allSettled([
           studentAPI.getMyProfile(),
           attendanceAPI.getMyAttendance(),
           marksAPI.getMyMarks(),
           noticeAPI.getAllNotices(),
+          feeAPI.getMyFees(),
         ]);
 
-        setProfile(profileRes.data);
-        setAttendance(attendanceRes.data);
-        setMarks(marksRes.data);
-        setNotices(noticesRes.data);
+        if (profileRes.status === 'fulfilled') {
+          setProfile(profileRes.value.data?.student || profileRes.value.data);
+        }
+        if (attendanceRes.status === 'fulfilled') setAttendance(attendanceRes.value.data);
+        if (marksRes.status === 'fulfilled') setMarks(marksRes.value.data);
+        if (noticesRes.status === 'fulfilled') {
+          setNotices(Array.isArray(noticesRes.value.data) ? noticesRes.value.data : []);
+        }
+        if (feesRes.status === 'fulfilled') {
+          const d = feesRes.value.data;
+          setFees(Array.isArray(d) ? d : d?.fees || []);
+        }
+
+        // Show error only if profile failed (critical)
+        if (profileRes.status === 'rejected') {
+          toast.error('Failed to load profile data');
+        }
       } catch (error) {
-        toast.error("Failed to load dashboard data");
+        toast.error('Failed to load dashboard data');
         console.error(error);
       } finally {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
+  const handleLogout = () => { logout(); navigate("/login"); };
 
   if (loading) {
     return (
@@ -55,6 +66,12 @@ function StudentDashboard() {
       </div>
     );
   }
+
+  const feeStatusColor = (status) => {
+    if (status === "paid") return "badge-success";
+    if (status === "partial") return "badge-warning";
+    return "badge-danger";
+  };
 
   return (
     <div className="student-dashboard">
@@ -66,10 +83,11 @@ function StudentDashboard() {
         </div>
         <nav className="sidebar-menu">
           {[
-            { id: "profile", label: "👤 Profile" },
+            { id: "profile",    label: "👤 Profile" },
             { id: "attendance", label: "📋 Attendance" },
-            { id: "marks", label: "📊 Marks" },
-            { id: "notices", label: "📢 Notices" },
+            { id: "marks",      label: "📊 Marks" },
+            { id: "fees",       label: "💰 Fees" },
+            { id: "notices",    label: "📢 Notices" },
           ].map((item) => (
             <button
               key={item.id}
@@ -87,9 +105,12 @@ function StudentDashboard() {
       </aside>
 
       <main className="dashboard-content">
-        {activeTab === "profile" && profile && (
+
+        {/* ── PROFILE ── */}
+        {activeTab === "profile" && (
           <div className="dashboard-section">
             <h1>Welcome, {user?.name}! 👋</h1>
+            {profile ? (
             <div className="profile-card">
               <div className="profile-header">
                 <div className="avatar-placeholder">{user?.name?.charAt(0)}</div>
@@ -106,9 +127,11 @@ function StudentDashboard() {
                 <div className="detail-item"><span className="label">Status</span><span className="badge badge-success">{user?.status}</span></div>
               </div>
             </div>
+            ) : <p className="empty-state">Profile not found. Please contact admin.</p>}
           </div>
         )}
 
+        {/* ── ATTENDANCE ── */}
         {activeTab === "attendance" && (
           <div className="dashboard-section">
             <h2>Attendance</h2>
@@ -146,37 +169,92 @@ function StudentDashboard() {
           </div>
         )}
 
+        {/* ── MARKS ── */}
         {activeTab === "marks" && (
           <div className="dashboard-section">
             <h2>Marks</h2>
             {marks?.bySemester && Object.keys(marks.bySemester).length > 0 ? (
-              Object.entries(marks.bySemester).map(([semester, semesterMarks]) => (
-                <div key={semester} className="semester-section">
-                  <h3>Semester {semester}</h3>
-                  <table className="data-table">
-                    <thead>
-                      <tr><th>Subject</th><th>Internals</th><th>Externals</th><th>Total</th><th>Grade</th></tr>
-                    </thead>
-                    <tbody>
-                      {semesterMarks.map((mark) => (
-                        <tr key={mark._id}>
-                          <td>{mark.subject}</td>
-                          <td>{mark.internals}</td>
-                          <td>{mark.externals}</td>
-                          <td>{mark.total}</td>
-                          <td><span className="badge badge-primary">{mark.grade}</span></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ))
+              Object.entries(marks.bySemester)
+                .sort(([a], [b]) => Number(a) - Number(b))
+                .map(([semester, semesterMarks]) => (
+                  <div key={semester} className="semester-section">
+                    <h3>Semester {semester}</h3>
+                    <table className="data-table">
+                      <thead>
+                        <tr><th>Subject</th><th>Internals (/40)</th><th>Externals (/60)</th><th>Total (/100)</th><th>Grade</th></tr>
+                      </thead>
+                      <tbody>
+                        {semesterMarks.map((mark) => (
+                          <tr key={mark._id}>
+                            <td>{mark.subject}</td>
+                            <td>{mark.internals}</td>
+                            <td>{mark.externals}</td>
+                            <td><strong>{mark.total ?? (mark.internals + mark.externals)}</strong></td>
+                            <td><span className="badge badge-primary">{mark.grade}</span></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ))
             ) : (
               <p className="empty-state">No marks published yet.</p>
             )}
           </div>
         )}
 
+        {/* ── FEES ── */}
+        {activeTab === "fees" && (
+          <div className="dashboard-section">
+            <h2>Fee Details</h2>
+            {fees.length === 0 ? (
+              <p className="empty-state">No fee records found.</p>
+            ) : (
+              <>
+                {/* Summary cards */}
+                <div className="fees-summary-grid">
+                  {(() => {
+                    const totalFees   = fees.reduce((s, f) => s + (f.totalFees  || 0), 0);
+                    const paidAmount  = fees.reduce((s, f) => s + (f.paidAmount || 0), 0);
+                    const dueAmount   = fees.reduce((s, f) => s + (f.dueAmount  || 0), 0);
+                    return [
+                      { label: "Total Fees",   value: `₹${totalFees.toLocaleString("en-IN")}`,  color: "#0A2342" },
+                      { label: "Paid",         value: `₹${paidAmount.toLocaleString("en-IN")}`, color: "#16a34a" },
+                      { label: "Due Amount",   value: `₹${dueAmount.toLocaleString("en-IN")}`,  color: "#dc2626" },
+                    ].map((c) => (
+                      <div key={c.label} className="fee-summary-card" style={{ borderTopColor: c.color }}>
+                        <div className="fee-summary-value" style={{ color: c.color }}>{c.value}</div>
+                        <div className="fee-summary-label">{c.label}</div>
+                      </div>
+                    ));
+                  })()}
+                </div>
+
+                {/* Fee records table */}
+                <table className="data-table">
+                  <thead>
+                    <tr><th>#</th><th>Total Fees</th><th>Paid</th><th>Due</th><th>Status</th><th>Payment Date</th><th>Remarks</th></tr>
+                  </thead>
+                  <tbody>
+                    {fees.map((fee, i) => (
+                      <tr key={fee._id}>
+                        <td>{i + 1}</td>
+                        <td>₹{(fee.totalFees || 0).toLocaleString("en-IN")}</td>
+                        <td>₹{(fee.paidAmount || 0).toLocaleString("en-IN")}</td>
+                        <td>₹{(fee.dueAmount || 0).toLocaleString("en-IN")}</td>
+                        <td><span className={`badge ${feeStatusColor(fee.status)}`}>{fee.status}</span></td>
+                        <td>{fee.paymentDate ? new Date(fee.paymentDate).toLocaleDateString("en-IN") : "—"}</td>
+                        <td>{fee.remarks || "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ── NOTICES ── */}
         {activeTab === "notices" && (
           <div className="dashboard-section">
             <h2>Notices</h2>
@@ -195,6 +273,7 @@ function StudentDashboard() {
             </div>
           </div>
         )}
+
       </main>
     </div>
   );

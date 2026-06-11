@@ -144,4 +144,26 @@ export const marksAPI = {
     api.delete(`/marks/${id}`)
 };
 
+// Fee API
+export const feeAPI = {
+  getMyFees: () =>
+    api.get('/fees/my-fees'),
+  getAllFees: () =>
+    api.get('/fees'),
+  createFee: (data) =>
+    api.post('/fees', data),
+  updateFee: (id, data) =>
+    api.put(`/fees/${id}`, data),
+  deleteFee: (id) =>
+    api.delete(`/fees/${id}`),
+};
+
+// Contact API
+export const contactAPI = {
+  sendMessage: (data) => api.post('/contact', data),
+  getAllMessages: () => api.get('/contact'),
+  markAsRead: (id) => api.put(`/contact/${id}/read`),
+  deleteMessage: (id) => api.delete(`/contact/${id}`),
+};
+
 export default api;

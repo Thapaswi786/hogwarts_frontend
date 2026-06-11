@@ -9,6 +9,22 @@ const steps = [
   { title: "Fee Payment & Enrollment", desc: "Pay the admission fee and complete enrollment to confirm your seat." },
 ];
 
+// Defined outside component to prevent re-mount on every render (fixes cursor loss)
+const F = ({ label, name, type = "text", options, placeholder, required, value, onChange, error }) => (
+  <div className="form-group">
+    <label>{label}{required && <span style={{ color: "var(--secondary)" }}> *</span>}</label>
+    {options ? (
+      <select name={name} value={value} onChange={onChange}>
+        <option value="">-- Select --</option>
+        {options.map((o) => <option key={o} value={o}>{o}</option>)}
+      </select>
+    ) : (
+      <input type={type} name={name} value={value} onChange={onChange} placeholder={placeholder} />
+    )}
+    {error && <span className="error-text">{error}</span>}
+  </div>
+);
+
 function Admission() {
   const [form, setForm] = useState({
     fullName: "", dob: "", gender: "", email: "", phone: "",
@@ -34,8 +50,9 @@ function Admission() {
   };
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-    setErrors({ ...errors, [e.target.name]: "" });
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const handleSubmit = (e) => {
@@ -70,19 +87,8 @@ function Admission() {
     );
   }
 
-  const F = ({ label, name, type = "text", options, placeholder, required }) => (
-    <div className="form-group">
-      <label>{label}{required && <span style={{ color: "var(--secondary)" }}> *</span>}</label>
-      {options ? (
-        <select name={name} value={form[name]} onChange={handleChange}>
-          <option value="">-- Select --</option>
-          {options.map((o) => <option key={o} value={o}>{o}</option>)}
-        </select>
-      ) : (
-        <input type={type} name={name} value={form[name]} onChange={handleChange} placeholder={placeholder} />
-      )}
-      {errors[name] && <span className="error-text">{errors[name]}</span>}
-    </div>
+  const field = (props) => (
+    <F {...props} value={form[props.name]} onChange={handleChange} error={errors[props.name]} />
   );
 
   return (
@@ -121,19 +127,19 @@ function Admission() {
             {/* Personal Details */}
             <h3 style={{ color: "var(--secondary)", margin: "20px 0 14px", fontSize: "1.1rem" }}>Personal Details</h3>
             <div className="grid-2">
-              <F label="Full Name" name="fullName" placeholder="As per school records" required />
-              <F label="Date of Birth" name="dob" type="date" required />
+              {field({ label: "Full Name", name: "fullName", placeholder: "As per school records", required: true })}
+              {field({ label: "Date of Birth", name: "dob", type: "date", required: true })}
             </div>
             <div className="grid-2">
-              <F label="Gender" name="gender" options={["Male", "Female", "Other"]} required />
-              <F label="Category" name="category" options={["General / OC", "BC", "MBC", "SC", "ST"]} />
+              {field({ label: "Gender", name: "gender", options: ["Male", "Female", "Other"], required: true })}
+              {field({ label: "Category", name: "category", options: ["General / OC", "BC", "MBC", "SC", "ST"] })}
             </div>
 
             {/* Contact */}
             <h3 style={{ color: "var(--secondary)", margin: "20px 0 14px", fontSize: "1.1rem" }}>Contact Details</h3>
             <div className="grid-2">
-              <F label="Email Address" name="email" type="email" placeholder="your@email.com" required />
-              <F label="Phone Number" name="phone" type="tel" placeholder="10-digit mobile number" required />
+              {field({ label: "Email Address", name: "email", type: "email", placeholder: "your@email.com", required: true })}
+              {field({ label: "Phone Number", name: "phone", type: "tel", placeholder: "10-digit mobile number", required: true })}
             </div>
             <div className="form-group">
               <label>Address</label>
@@ -144,15 +150,15 @@ function Admission() {
               />
             </div>
             <div className="grid-3">
-              <F label="City / Town" name="city" placeholder="City" />
-              <F label="State" name="state" options={["Tamil Nadu","Kerala","Karnataka","Andhra Pradesh","Telangana","Maharashtra","Other"]} />
-              <F label="PIN Code" name="pincode" placeholder="6-digit PIN" />
+              {field({ label: "City / Town", name: "city", placeholder: "City" })}
+              {field({ label: "State", name: "state", options: ["Tamil Nadu","Kerala","Karnataka","Andhra Pradesh","Telangana","Maharashtra","Other"] })}
+              {field({ label: "PIN Code", name: "pincode", placeholder: "6-digit PIN" })}
             </div>
 
             {/* Academic */}
             <h3 style={{ color: "var(--secondary)", margin: "20px 0 14px", fontSize: "1.1rem" }}>Academic Details</h3>
             <div className="grid-2">
-              <F label="Course Applied For" name="course" options={[
+              {field({ label: "Course Applied For", name: "course", required: true, options: [
                 "B.E. Computer Science and Engineering",
                 "B.E. Electronics and Communication Engineering",
                 "B.E. Electrical and Electronics Engineering",
@@ -162,21 +168,21 @@ function Admission() {
                 "M.E. VLSI Design",
                 "M.Tech Artificial Intelligence and Data Science",
                 "M.E. Power Systems Engineering",
-              ]} required />
-              <F label="Previous School / College" name="prevSchool" placeholder="Name of institution" />
+              ]})}
+              {field({ label: "Previous School / College", name: "prevSchool", placeholder: "Name of institution" })}
             </div>
             <div className="grid-2">
-              <F label="12th / UG Percentage (%)" name="percentage" type="number" placeholder="e.g. 87.5" required />
-              <F label="Board / University" name="board" options={[
+              {field({ label: "12th / UG Percentage (%)", name: "percentage", type: "number", placeholder: "e.g. 87.5", required: true })}
+              {field({ label: "Board / University", name: "board", options: [
                 "Tamil Nadu State Board", "CBSE", "ICSE", "Anna University", "Other University"
-              ]} />
+              ]})}
             </div>
 
             {/* Parent */}
             <h3 style={{ color: "var(--secondary)", margin: "20px 0 14px", fontSize: "1.1rem" }}>Parent / Guardian Details</h3>
             <div className="grid-2">
-              <F label="Parent / Guardian Name" name="parentName" placeholder="Full name" required />
-              <F label="Parent / Guardian Phone" name="parentPhone" type="tel" placeholder="10-digit mobile number" />
+              {field({ label: "Parent / Guardian Name", name: "parentName", placeholder: "Full name", required: true })}
+              {field({ label: "Parent / Guardian Phone", name: "parentPhone", type: "tel", placeholder: "10-digit mobile number" })}
             </div>
 
             <button type="submit" className="main-btn" style={{ marginTop: "10px" }}>

@@ -16,9 +16,13 @@ function TeacherDashboard() {
   const [students, setStudents] = useState([]);
   const [notices, setNotices] = useState([]);
 
+  // Filter state
+  const [filterDept, setFilterDept] = useState("");
+
   // Attendance state
   const [attDate, setAttDate] = useState(new Date().toISOString().split("T")[0]);
   const [attSubject, setAttSubject] = useState("");
+  const [attSemester, setAttSemester] = useState("");
   const [attStatuses, setAttStatuses] = useState({});
   const [savingAtt, setSavingAtt] = useState(false);
 
@@ -49,7 +53,7 @@ function TeacherDashboard() {
     fetchData();
   }, []);
 
-  // Initialize attendance statuses when students load
+  // Initialize attendance/marks state when students load
   useEffect(() => {
     const init = {};
     students.forEach((s) => { init[s._id] = "present"; });
@@ -59,13 +63,23 @@ function TeacherDashboard() {
     setStudentMarks(initMarks);
   }, [students]);
 
+  const DEPARTMENTS = ["Computer Science", "Electronics", "Mechanical", "Civil", "Electrical", "Information Technology"];
+
   const handleLogout = () => { logout(); navigate("/login"); };
+
+  const filteredByDept = filterDept ? students.filter((s) => s.department === filterDept) : students;
+
+  // All students visible in marks tab (semester filter only affects which semester marks are saved to)
+  const marksStudents = filteredByDept;
 
   const handleSaveAttendance = async () => {
     if (!attSubject.trim()) { toast.error("Please enter a subject"); return; }
+    const attStudents = attSemester
+      ? filteredByDept.filter((s) => String(s.semester) === attSemester)
+      : filteredByDept;
     setSavingAtt(true);
     try {
-      const records = students.map((s) => ({
+      const records = attStudents.map((s) => ({
         studentId: s._id,
         date: attDate,
         status: attStatuses[s._id] || "present",
@@ -82,25 +96,32 @@ function TeacherDashboard() {
 
   const handleSaveMarks = async () => {
     if (!marksSubject.trim()) { toast.error("Please enter a subject"); return; }
+    const toSave = marksStudents.filter((s) => {
+      const m = studentMarks[s._id];
+      return m && m.internals !== "" && m.externals !== "";
+    });
+    if (toSave.length === 0) { toast.error("Please enter marks for at least one student"); return; }
     setSavingMarks(true);
     let saved = 0, failed = 0;
-    for (const s of students) {
+    for (const s of toSave) {
       const m = studentMarks[s._id];
-      if (!m || m.internals === "" || m.externals === "") continue;
       try {
         await marksAPI.addMarks({
           studentId: s._id,
-          subject: marksSubject,
-          semester: parseInt(marksSemester),
+          subject: marksSubject.trim(),
+          semester: parseInt(marksSemester, 10),
           internals: Number(m.internals),
           externals: Number(m.externals),
         });
         saved++;
-      } catch { failed++; }
+      } catch (err) {
+        console.error("Failed for", s.userId?.name, err.response?.data?.error || err.message);
+        failed++;
+      }
     }
     setSavingMarks(false);
     if (saved > 0) toast.success(`Marks saved for ${saved} student(s)!`);
-    if (failed > 0) toast.error(`Failed for ${failed} student(s)`);
+    if (failed > 0) toast.error(`Failed for ${failed} student(s) — check console`);
   };
 
   if (loading) {
@@ -184,6 +205,15 @@ function TeacherDashboard() {
         {activeTab === "students" && (
           <div className="td-section">
             <h1 className="td-page-title">Students</h1>
+            <div className="td-form-row" style={{ marginBottom: "16px" }}>
+              <div className="td-form-group">
+                <label>Filter by Department</label>
+                <select className="td-input" value={filterDept} onChange={(e) => setFilterDept(e.target.value)}>
+                  <option value="">All Departments</option>
+                  {DEPARTMENTS.map((d) => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+            </div>
             <div className="td-table-wrap">
               <table className="td-table">
                 <thead>
@@ -192,9 +222,9 @@ function TeacherDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {students.length === 0 ? (
+                  {filteredByDept.length === 0 ? (
                     <tr><td colSpan="6" className="td-empty">No students found.</td></tr>
-                  ) : students.map((s, i) => (
+                  ) : filteredByDept.map((s, i) => (
                     <tr key={s._id}>
                       <td>{i + 1}</td>
                       <td><strong>{s.userId?.name}</strong></td>
@@ -217,33 +247,41 @@ function TeacherDashboard() {
             <div className="td-form-row">
               <div className="td-form-group">
                 <label>Date</label>
-                <input
-                  type="date"
-                  value={attDate}
-                  onChange={(e) => setAttDate(e.target.value)}
-                  className="td-input"
-                />
+                <input type="date" value={attDate} onChange={(e) => setAttDate(e.target.value)} className="td-input" />
               </div>
               <div className="td-form-group">
                 <label>Subject</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Mathematics"
-                  value={attSubject}
-                  onChange={(e) => setAttSubject(e.target.value)}
-                  className="td-input"
-                />
+                <input type="text" placeholder="e.g. Mathematics" value={attSubject} onChange={(e) => setAttSubject(e.target.value)} className="td-input" />
+              </div>
+              <div className="td-form-group">
+                <label>Semester</label>
+                <select className="td-input" value={attSemester} onChange={(e) => setAttSemester(e.target.value)}>
+                  <option value="">All Semesters</option>
+                  {[1,2,3,4,5,6,7,8].map((n) => <option key={n} value={n}>Semester {n}</option>)}
+                </select>
+              </div>
+              <div className="td-form-group">
+                <label>Department</label>
+                <select className="td-input" value={filterDept} onChange={(e) => setFilterDept(e.target.value)}>
+                  <option value="">All Departments</option>
+                  {DEPARTMENTS.map((d) => <option key={d} value={d}>{d}</option>)}
+                </select>
               </div>
             </div>
+            {(() => {
+              const attStudents = attSemester
+                ? filteredByDept.filter((s) => String(s.semester) === attSemester)
+                : filteredByDept;
+              return (
             <div className="td-table-wrap">
               <table className="td-table">
                 <thead>
                   <tr><th>#</th><th>Student Name</th><th>Reg. No</th><th>Status</th></tr>
                 </thead>
                 <tbody>
-                  {students.length === 0 ? (
+                  {attStudents.length === 0 ? (
                     <tr><td colSpan="4" className="td-empty">No students to mark.</td></tr>
-                  ) : students.map((s, i) => (
+                  ) : attStudents.map((s, i) => (
                     <tr key={s._id}>
                       <td>{i + 1}</td>
                       <td><strong>{s.userId?.name}</strong></td>
@@ -264,12 +302,9 @@ function TeacherDashboard() {
                 </tbody>
               </table>
             </div>
-            <button
-              type="button"
-              className="td-save-btn"
-              onClick={handleSaveAttendance}
-              disabled={savingAtt}
-            >
+              );
+            })()}
+            <button type="button" className="td-save-btn" onClick={handleSaveAttendance} disabled={savingAtt}>
               {savingAtt ? "Saving..." : "💾 Save Attendance"}
             </button>
           </div>
@@ -282,24 +317,21 @@ function TeacherDashboard() {
             <div className="td-form-row">
               <div className="td-form-group">
                 <label>Subject</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Physics"
-                  value={marksSubject}
-                  onChange={(e) => setMarksSubject(e.target.value)}
-                  className="td-input"
-                />
+                <input type="text" placeholder="e.g. Physics" value={marksSubject} onChange={(e) => setMarksSubject(e.target.value)} className="td-input" />
               </div>
               <div className="td-form-group">
-                <label>Semester</label>
-                <select
-                  value={marksSemester}
-                  onChange={(e) => setMarksSemester(e.target.value)}
-                  className="td-input"
-                >
+                <label>Save to Semester</label>
+                <select value={marksSemester} onChange={(e) => setMarksSemester(e.target.value)} className="td-input">
                   {[1,2,3,4,5,6,7,8].map((n) => (
                     <option key={n} value={n}>Semester {n}</option>
                   ))}
+                </select>
+              </div>
+              <div className="td-form-group">
+                <label>Department</label>
+                <select className="td-input" value={filterDept} onChange={(e) => setFilterDept(e.target.value)}>
+                  <option value="">All Departments</option>
+                  {DEPARTMENTS.map((d) => <option key={d} value={d}>{d}</option>)}
                 </select>
               </div>
             </div>
@@ -310,9 +342,9 @@ function TeacherDashboard() {
                   <tr><th>#</th><th>Name</th><th>Reg. No</th><th>Internals (/40)</th><th>Externals (/60)</th></tr>
                 </thead>
                 <tbody>
-                  {students.length === 0 ? (
-                    <tr><td colSpan="5" className="td-empty">No students found.</td></tr>
-                  ) : students.map((s, i) => (
+                  {marksStudents.length === 0 ? (
+                    <tr><td colSpan="5" className="td-empty">No students found for this semester.</td></tr>
+                  ) : marksStudents.map((s, i) => (
                     <tr key={s._id}>
                       <td>{i + 1}</td>
                       <td><strong>{s.userId?.name}</strong></td>
@@ -354,12 +386,7 @@ function TeacherDashboard() {
                 </tbody>
               </table>
             </div>
-            <button
-              type="button"
-              className="td-save-btn"
-              onClick={handleSaveMarks}
-              disabled={savingMarks}
-            >
+            <button type="button" className="td-save-btn" onClick={handleSaveMarks} disabled={savingMarks}>
               {savingMarks ? "Saving..." : "💾 Save Marks"}
             </button>
           </div>
