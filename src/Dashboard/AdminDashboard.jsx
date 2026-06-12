@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { adminAPI, studentAPI, teacherAPI, noticeAPI, feeAPI, contactAPI } from "../utils/api";
+import { adminAPI, studentAPI, teacherAPI, noticeAPI, feeAPI, contactAPI, placementAPI } from "../utils/api";
 import { toast } from "react-toastify";
 import logo from "../assets/logo.png";
 import "../assets/css/AdminDashboard.css";
@@ -68,11 +68,12 @@ export default function AdminDashboard() {
 
   const [placements, setPlacements]   = useState([]);
   const [placementForm, setPlacementForm] = useState({ studentName: "", company: "", role: "", package: "", year: new Date().getFullYear(), status: "placed" });
+  const [addingPlacement, setAddingPlacement] = useState(false);
 
   // ── Fetch all data ────────────────────────────────────────────────────
   const fetchAll = useCallback(async () => {
     try {
-      const [s, st, te, p, n, f, msgs] = await Promise.allSettled([
+      const [s, st, te, p, n, f, msgs, pl] = await Promise.allSettled([
         adminAPI.getDashboardStats(),
         studentAPI.getAllStudents(),
         teacherAPI.getAllTeachers(),
@@ -80,6 +81,7 @@ export default function AdminDashboard() {
         noticeAPI.getAllNotices(),
         feeAPI.getAllFees(),
         contactAPI.getAllMessages(),
+        placementAPI.getAll(),
       ]);
       if (s.status    === 'fulfilled') setStats(s.value.data);
       if (st.status   === 'fulfilled') setStudents(Array.isArray(st.value.data) ? st.value.data : []);
@@ -88,6 +90,7 @@ export default function AdminDashboard() {
       if (n.status    === 'fulfilled') setNotices(Array.isArray(n.value.data) ? n.value.data : []);
       if (f.status    === 'fulfilled') setFees(Array.isArray(f.value.data) ? f.value.data : []);
       if (msgs.status === 'fulfilled') setMessages(Array.isArray(msgs.value.data) ? msgs.value.data : []);
+      if (pl.status   === 'fulfilled') setPlacements(Array.isArray(pl.value.data) ? pl.value.data : []);
     } catch { toast.error('Failed to load dashboard data'); }
     finally { setLoading(false); }
   }, []);
@@ -261,14 +264,27 @@ export default function AdminDashboard() {
   };*/
 
   // ── Placements ────────────────────────────────────────────────────────
-  const addPlacement = (e) => {
+  const addPlacement = async (e) => {
     e.preventDefault();
     if (!placementForm.studentName || !placementForm.company) { toast.error("Name and company required"); return; }
-    setPlacements([...placements, { ...placementForm, id: Date.now(), createdAt: new Date().toISOString() }]);
-    setPlacementForm({ studentName: "", company: "", role: "", package: "", year: new Date().getFullYear(), status: "placed" });
-    toast.success("Placement added!");
+    setAddingPlacement(true);
+    try {
+      await placementAPI.create({ ...placementForm, year: Number(placementForm.year) });
+      toast.success("Placement added!");
+      setPlacementForm({ studentName: "", company: "", role: "", package: "", year: new Date().getFullYear(), status: "placed" });
+      const r = await placementAPI.getAll(); setPlacements(Array.isArray(r.data) ? r.data : []);
+    } catch (err) { toast.error(err.response?.data?.error || "Failed to add placement"); }
+    finally { setAddingPlacement(false); }
   };
-  const deletePlacement = (id) => { if (window.confirm("Delete placement record?")) setPlacements(placements.filter(p => p.id !== id)); };
+
+  const deletePlacement = async (id) => {
+    if (!window.confirm("Delete placement record?")) return;
+    try {
+      await placementAPI.remove(id);
+      toast.success("Deleted");
+      setPlacements(pl => pl.filter(p => p._id !== id));
+    } catch { toast.error("Delete failed"); }
+  };
 
   if (loading) return (
     <div className="dashboard-loading">
@@ -755,7 +771,9 @@ export default function AdminDashboard() {
                     <select value={placementForm.status} onChange={e => setPlacementForm(f => ({ ...f, status: e.target.value }))}>
                       <option value="placed">Placed</option><option value="in-process">In Process</option><option value="not-placed">Not Placed</option></select></div>
                 </div>
-                <button type="submit" className="btn btn-primary">💾 Add Record</button>
+                <button type="submit" className="btn btn-primary" disabled={addingPlacement}>
+                  {addingPlacement ? "Adding…" : "💾 Add Record"}
+                </button>
               </form>
             </div>
 
@@ -765,7 +783,7 @@ export default function AdminDashboard() {
                   <thead><tr><th>#</th><th>Student</th><th>Company</th><th>Role</th><th>Package</th><th>Year</th><th>Status</th><th>Action</th></tr></thead>
                   <tbody>
                     {placements.map((p, i) => (
-                      <tr key={p.id}>
+                      <tr key={p._id}>
                         <td>{i + 1}</td>
                         <td><strong>{p.studentName}</strong></td>
                         <td>{p.company}</td>
@@ -773,7 +791,7 @@ export default function AdminDashboard() {
                         <td>{p.package || "—"}</td>
                         <td>{p.year}</td>
                         <td><span className={`badge badge-${p.status === "placed" ? "success" : p.status === "in-process" ? "warning" : "danger"}`}>{p.status}</span></td>
-                        <td><button className="btn btn-sm btn-ghost" onClick={() => deletePlacement(p.id)}>🗑</button></td>
+                        <td><button className="btn btn-sm btn-ghost" onClick={() => deletePlacement(p._id)}>🗑</button></td>
                       </tr>
                     ))}
                   </tbody>

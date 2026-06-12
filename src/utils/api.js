@@ -158,6 +158,14 @@ export const feeAPI = {
     api.delete(`/fees/${id}`),
 };
 
+// Placement API
+export const placementAPI = {
+  getAll: () => api.get('/placements'),
+  create: (data) => api.post('/placements', data),
+  update: (id, data) => api.put(`/placements/${id}`, data),
+  remove: (id) => api.delete(`/placements/${id}`),
+};
+
 // Contact API
 export const contactAPI = {
   sendMessage: (data) => api.post('/contact', data),
